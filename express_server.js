@@ -38,10 +38,11 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // logs in terminal { longURL: 'https://www.geeksforgeeks.org/' }
-  res.send("Ok"); //output in browser 
-
-})
+  const longURL = req.body.longURL // gets https://www.geeksforgeeks.org/
+  const id = generateRandomString();
+  urlDatabase[id] = longURL;
+  res.redirect(`/urls/${id}`); //output in browser 
+});
 
 
 app.listen(PORT, () => {
@@ -57,5 +58,7 @@ const generateRandomString = function() {
     let rString = Math.floor(Math.random() * charts.length);
     randomString +=charts.substring(rString, rString + 1);
   }
+
+  return randomString;
 
 };
