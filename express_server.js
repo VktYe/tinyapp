@@ -37,7 +37,25 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls", (req, res) => {
+  console.log(req.body); // logs in terminal { longURL: 'https://www.geeksforgeeks.org/' }
+  res.send("Ok"); //output in browser 
+
+})
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+const generateRandomString = function() {
+  const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
+  const stringLength = 6;
+  let randomString = '';
+
+  for (let i = 0; i < stringLength; i++) {
+    let rString = Math.floor(Math.random() * charts.length);
+    randomString +=charts.substring(rString, rString + 1);
+  }
+
+};
