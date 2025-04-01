@@ -5,13 +5,13 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 
 const generateRandomString = function() {
-  const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
+  const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789";
   const stringLength = 6;
   let randomString = '';
   
   for (let i = 0; i < stringLength; i++) {
     let rString = Math.floor(Math.random() * charts.length);
-    randomString +=charts.substring(rString, rString + 1);
+    randomString += charts.substring(rString, rString + 1);
   }
   return randomString;
 };
@@ -37,7 +37,7 @@ app.get("/hello", (req, res) => {
 }); // curl - will return etire HTML response string
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase}
+  const templateVars = { urls: urlDatabase};
   res.render("urls_index", templateVars);
 });
 
@@ -46,32 +46,39 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL // gets 
+  const longURL = req.body.longURL; // gets
   const id = generateRandomString();
   urlDatabase[id] = longURL;
-  res.redirect(`/urls/${id}`); //output in browser 
+  res.redirect(`/urls/${id}`); //output in browser
 });
 
 app.post("/login", (req, res) => {
   let username = req.body.username; // gets username from client's input
-  res.cookie("username", username, { maxAge: 900000, httpOnly: true }); //sets cookie  
+  res.cookie("username", username, { maxAge: 900000, httpOnly: true }); //sets cookie
   res.redirect("/urls");
 });
 
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => { // renders page with urls_show
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
 
-app.get(`/u/:id`, (req, res) => {
+app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
+  const id = req.params.id;
+  const newLongURL = req.body.longURL;
+  urlDatabase[id] = newLongURL;
+  res.redirect('/urls');
+});
+
+app.get(`/u/:id`, (req, res) => { //redirects to the longURL after using short
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
 
-app.post("/urls/:id/delete", (req, res) => {
+app.post("/urls/:id/delete", (req, res) => { //after deleting url redirects to /urls
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
-})
+});
 
 
 
