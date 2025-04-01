@@ -4,12 +4,25 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+const generateRandomString = function() {
+  const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
+  const stringLength = 6;
+  let randomString = '';
+  
+  for (let i = 0; i < stringLength; i++) {
+    let rString = Math.floor(Math.random() * charts.length);
+    randomString +=charts.substring(rString, rString + 1);
+  }
+  return randomString;
+};
+
+app.use(express.urlencoded({ extended: true }));
+
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
 
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -38,32 +51,25 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL // gets https://www.geeksforgeeks.org/
+  const longURL = req.body.longURL // gets 
   const id = generateRandomString();
   urlDatabase[id] = longURL;
   res.redirect(`/urls/${id}`); //output in browser 
 });
 
+app.post("/login", (req, res) => {
+  let username = req.body.username; // gets username from client's input
+  res.cookie("username", username, { maxAge: 900000, httpOnly: true }); //sets cookie  
+  res.redirect("/urls");
+});
+
 app.get(`/u/:id`, (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
-})
+});
+
 
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-const generateRandomString = function() {
-  const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
-  const stringLength = 6;
-  let randomString = '';
-
-  for (let i = 0; i < stringLength; i++) {
-    let rString = Math.floor(Math.random() * charts.length);
-    randomString +=charts.substring(rString, rString + 1);
-  }
-
-  return randomString;
-
-};
