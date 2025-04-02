@@ -1,8 +1,13 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 
-app.set("view engine", "ejs");
+// database
+const urlDatabase = {
+  b2xVn2: "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com",
+};
 
 const generateRandomString = function() {
   const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789";
@@ -16,34 +21,43 @@ const generateRandomString = function() {
   return randomString;
 };
 
+// Setting view engine
+app.set("view engine", "ejs");
+
+// Midlleware
+// app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-};
-
+// Endpoints:
 
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
+}); // curl - will return etire HTML response string
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase); // returns as json string
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-}); // curl - will return etire HTML response string
-
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase};
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies["username"] // passing username to the urls_index
+  };
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+app.get("/urls/new", (req, res) => { // page where to create new tinyurl
+  const templateVars = {
+    username: req.cookies["username"]
+  }
+  res.render("urls_new", templateVars);
 });
+
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL; // gets
@@ -59,7 +73,11 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => { // renders page with urls_show
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { 
+    id: req.params.id, 
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+  };
   res.render("urls_show", templateVars);
 });
 
