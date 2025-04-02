@@ -44,7 +44,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     username: req.cookies["username"] // passing username to the urls_index
   };
@@ -54,10 +54,20 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => { // page where to create new tinyurl
   const templateVars = {
     username: req.cookies["username"]
-  }
+  };
   res.render("urls_new", templateVars);
 });
 
+
+
+app.get("/urls/:id", (req, res) => { // renders page with urls_show
+  const templateVars = {
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+  };
+  res.render("urls_show", templateVars);
+});
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL; // gets
@@ -68,17 +78,20 @@ app.post("/urls", (req, res) => {
 
 app.post("/login", (req, res) => {
   let username = req.body.username; // gets username from client's input
+  //add error handling case with login with empty username
+  if (!username || username.trim() === "") {
+    res.status(400).send(`
+                <h1> The username is not valid </h1>
+                <a href="/urls"> Go back to the main page</a>
+            `);
+  }
   res.cookie("username", username, { maxAge: 900000, httpOnly: true }); //sets cookie
   res.redirect("/urls");
 });
 
-app.get("/urls/:id", (req, res) => { // renders page with urls_show
-  const templateVars = { 
-    id: req.params.id, 
-    longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
-  };
-  res.render("urls_show", templateVars);
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
 });
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
@@ -97,7 +110,6 @@ app.post("/urls/:id/delete", (req, res) => { //after deleting url redirects to /
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
-
 
 
 app.listen(PORT, () => {
