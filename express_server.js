@@ -89,6 +89,12 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
+// Endpoint for GET /register returns created template
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
+
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
