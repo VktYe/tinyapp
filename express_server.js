@@ -40,7 +40,7 @@ const getUserByEmail = function(email) {
   for (const userId in listOfUsers) {
     const user = listOfUsers[userId]
       if (email === user.email) { // if user.email exists return user
-        console.log(user);
+        console.log(user); // delete 
         return user;
       }
     }
@@ -92,6 +92,11 @@ app.get("/register", (req, res) => {
   res.render("register", {user});
 });
 
+app.get("/login", (req, res) => {
+  const user = listOfUsers[req.cookies["user_id"]];
+  res.render("login", {user});
+})
+
 
 app.get("/urls/:id", (req, res) => { // renders page with urls_show
   const templateVars = {
@@ -110,20 +115,34 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  let username = req.body.username; // gets username from client's input
-  //add error handling case with login with empty username
-  if (!username || username.trim() === "") {
-    res.status(400).send(`
-                <h1> The username is not valid </h1>
-                <a href="/urls"> Go back to the main page</a>
-            `);
+ 
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = getUserByEmail(email);
+
+  if (email.trim() === "" || password.trim() === "") {
+    return res.status(400).send(`
+      <h1>Email or password field cannot be empty</h1>
+      <a href="/login"> Go back to login page</a>`)
   }
-  res.cookie("username", username, { maxAge: 900000, httpOnly: true }); //sets cookie
+  if (!user) {
+    return res.status(400).send(`
+      <h1> Email is not found</h1>
+      <a href="/login"> Go back to login page</a>`)
+  }
+  if (user.password !== password) {
+    return res.status(400).send(`
+      <h1>Incorrect password</h1>
+      <a href="/login"> Go back to login page</a>`)
+  }
+
+  
+  res.cookie("user_id", user.id, { maxAge: 900000, httpOnly: true }); //sets cookie
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -131,15 +150,16 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
-      <h1> Invalid email or password </h1>
+      <h1>Email or password field cannot be empty</h1>
       <a href="/register"> Go back to registration form </a>`)
 
   }
   if (getUserByEmail(email)) {
     return res.status(400).send(`
-      <h1> This email already exists, try a different one </h1>
+      <h1>This email already exists, try a different one </h1>
       <a href="/register"> Go back to registration form </a>`)
 
   }
@@ -149,8 +169,8 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: req.body.password
   }
-  // add user to cookies
-  console.log(listOfUsers)
+  
+  console.log(listOfUsers) // delete comment 
   res.cookie('user_id', userID);
   res.redirect("/urls");
 })
