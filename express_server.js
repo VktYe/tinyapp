@@ -114,11 +114,25 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
 });
+const userLookup = function(email) {
+  //find user with email in users
+  // return user object or null if not found }
+  // if user is not in Users return null 
+  // esle return user 
+
+}
 
 app.post("/register", (req, res) => {
- // add new user obj to users{}
- // to generate Id use generateRundomString()
- // set user_id cookie with generated ID
+  const email = req.body.email;
+  const password = req.body.password;
+  if (email === "" || password === "") {
+    return res.status(400).send(`
+      <h1> Invalid email or password </h1>
+      <a href="/register"> Go back to registration form </a>`)
+
+  }
+ // if e-mail or password empty - send res(400)
+ // if email already in user{}  - send res(400)
  const userID = generateRandomString();
   listOfUsers[userID] = {
     id: userID,
@@ -126,11 +140,8 @@ app.post("/register", (req, res) => {
     password: req.body.password
   }
   // add user to cookies
+  console.log(listOfUsers)
   res.cookie('user_id', userID);
-      
-  console.log(listOfUsers);
- // console.log user object to check 
- // redirect to /urls
   res.redirect("/urls",);
 })
 
