@@ -11,7 +11,7 @@ const urlDatabase = {
 
 const listOfUsers = {
   userRandomID: {
-    id: "uderRandomID", 
+    id: "userRandomID", 
     email: "user@example.com", 
     password: "password123",
   },
@@ -24,6 +24,7 @@ const listOfUsers = {
 
 }
 
+// helper functions
 const generateRandomString = function() {
   const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789";
   const stringLength = 6;
@@ -35,6 +36,17 @@ const generateRandomString = function() {
   }
   return randomString;
 };
+const getUserByEmail = function(email) {
+  for (const userId in listOfUsers) {
+    const user = listOfUsers[userId]
+      if (email === user.email) { // if user.email exists return user
+        console.log(user);
+        return user;
+      }
+    }
+  return null
+};
+
 
 // Setting view engine
 app.set("view engine", "ejs");
@@ -114,25 +126,23 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
 });
-const userLookup = function(email) {
-  //find user with email in users
-  // return user object or null if not found }
-  // if user is not in Users return null 
-  // esle return user 
 
-}
 
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  if (email === "" || password === "") {
+  if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
       <h1> Invalid email or password </h1>
       <a href="/register"> Go back to registration form </a>`)
 
   }
- // if e-mail or password empty - send res(400)
- // if email already in user{}  - send res(400)
+  if (getUserByEmail(email)) {
+    return res.status(400).send(`
+      <h1> This email already exists, try a different one </h1>
+      <a href="/register"> Go back to registration form </a>`)
+
+  }
  const userID = generateRandomString();
   listOfUsers[userID] = {
     id: userID,
@@ -142,7 +152,7 @@ app.post("/register", (req, res) => {
   // add user to cookies
   console.log(listOfUsers)
   res.cookie('user_id', userID);
-  res.redirect("/urls",);
+  res.redirect("/urls");
 })
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
