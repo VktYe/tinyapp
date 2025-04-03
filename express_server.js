@@ -59,23 +59,25 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"] // passing username to the urls_index
+    user: listOfUsers[req.cookies["user_id"]] // passing user_id object to urls_index
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => { // page where to create new tinyurl
   const templateVars = {
-    username: req.cookies["username"]
+    user: listOfUsers[req.cookies["user_id"]]
   };
   res.render("urls_new", templateVars);
 });
 
 // Endpoint for GET /register returns register template
 app.get("/register", (req, res) => {
-  res.render("register");
+  const user = listOfUsers[req.cookies["user_id"]];
+  res.render("register", {user});
 });
 
 
@@ -83,7 +85,7 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
+    user: listOfUsers[req.cookies["user_id"]]
   };
   res.render("urls_show", templateVars);
 });
@@ -114,22 +116,18 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  // const email = req.body.email;
-  // if (email in listOfUsers) { // if(listOfUsers[email])
-  //   return res.status(400).send(`<h1> This email already exists, try a different one </h1>
-  //   <a href="/register"> Go back to registration form </a>`);
-  // };
  // add new user obj to users{}
  // to generate Id use generateRundomString()
  // set user_id cookie with generated ID
-  listOfUsers[user = generateRandomString()] = {
-    id: user,
+ const userID = generateRandomString();
+  listOfUsers[userID] = {
+    id: userID,
     email: req.body.email,
     password: req.body.password
   }
-  // add user ID to cookies
-  res.cookie('user_id', user);
-  
+  // add user to cookies
+  res.cookie('user_id', userID);
+      
   console.log(listOfUsers);
  // console.log user object to check 
  // redirect to /urls
