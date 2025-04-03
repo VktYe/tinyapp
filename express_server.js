@@ -9,6 +9,21 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+const listOfUsers = {
+  userRandomID: {
+    id: "uderRandomID", 
+    email: "user@example.com", 
+    password: "password123",
+  },
+
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "password456"
+  }
+
+}
+
 const generateRandomString = function() {
   const charts = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789";
   const stringLength = 6;
@@ -58,6 +73,10 @@ app.get("/urls/new", (req, res) => { // page where to create new tinyurl
   res.render("urls_new", templateVars);
 });
 
+// Endpoint for GET /register returns register template
+app.get("/register", (req, res) => {
+  res.render("register");
+});
 
 
 app.get("/urls/:id", (req, res) => { // renders page with urls_show
@@ -89,16 +108,33 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
-// Endpoint for GET /register returns created template
-app.get("/register", (req, res) => {
-  res.render("register");
-});
-
-
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
 });
+
+app.post("/register", (req, res) => {
+  // const email = req.body.email;
+  // if (email in listOfUsers) { // if(listOfUsers[email])
+  //   return res.status(400).send(`<h1> This email already exists, try a different one </h1>
+  //   <a href="/register"> Go back to registration form </a>`);
+  // };
+ // add new user obj to users{}
+ // to generate Id use generateRundomString()
+ // set user_id cookie with generated ID
+  listOfUsers[user = generateRandomString()] = {
+    id: user,
+    email: req.body.email,
+    password: req.body.password
+  }
+  // add user ID to cookies
+  res.cookie('user_id', user);
+  
+  console.log(listOfUsers);
+ // console.log user object to check 
+ // redirect to /urls
+  res.redirect("/urls",);
+})
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
