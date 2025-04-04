@@ -11,8 +11,8 @@ const urlDatabase = {
 
 const listOfUsers = {
   userRandomID: {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "password123",
   },
 
@@ -22,7 +22,7 @@ const listOfUsers = {
     password: "password456"
   }
 
-}
+};
 
 // helper functions
 const generateRandomString = function() {
@@ -36,15 +36,15 @@ const generateRandomString = function() {
   }
   return randomString;
 };
+
 const getUserByEmail = function(email) {
   for (const userId in listOfUsers) {
-    const user = listOfUsers[userId]
-      if (email === user.email) { // if user.email exists return user
-        console.log(user); // delete 
-        return user;
-      }
+    const user = listOfUsers[userId];
+    if (email === user.email) { // if user.email exists return user
+      return user;
     }
-  return null
+  }
+  return null;
 };
 
 
@@ -95,7 +95,7 @@ app.get("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const user = listOfUsers[req.cookies["user_id"]];
   res.render("login", {user});
-})
+});
 
 
 app.get("/urls/:id", (req, res) => { // renders page with urls_show
@@ -108,14 +108,13 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
 });
 
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL; // gets
+  const longURL = req.body.longURL;
   const id = generateRandomString();
   urlDatabase[id] = longURL;
-  res.redirect(`/urls/${id}`); //output in browser
+  res.redirect(`/urls/${id}`);
 });
 
 app.post("/login", (req, res) => {
- 
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email);
@@ -123,12 +122,12 @@ app.post("/login", (req, res) => {
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
       <h1>Email or password field cannot be empty</h1>
-      <a href="/login"> Go back to login page</a>`)
+      <a href="/login"> Go back to login page</a>`);
   }
   if (!user || user.password !== password) { //checks if email exists and compares passwords
     return res.status(403).send(`
       <h1>Incorrect email or password</h1>
-      <a href="/login"> Go back to login page</a>`)
+      <a href="/login"> Go back to login page</a>`);
   }
  
   res.cookie("user_id", user.id, { maxAge: 900000, httpOnly: true }); //sets cookie
@@ -148,26 +147,26 @@ app.post("/register", (req, res) => {
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
       <h1>Email or password field cannot be empty</h1>
-      <a href="/register"> Go back to registration form </a>`)
-
+      <a href="/register"> Go back to registration form </a>`);
   }
+
   if (getUserByEmail(email)) {
     return res.status(400).send(`
       <h1>This email already exists, try a different one </h1>
-      <a href="/register"> Go back to registration form </a>`)
-
+      <a href="/register"> Go back to registration form </a>`);
   }
- const userID = generateRandomString();
+
+  const userID = generateRandomString();
   listOfUsers[userID] = {
     id: userID,
     email: req.body.email,
     password: req.body.password
-  }
+  };
   
-  console.log(listOfUsers) // delete comment 
+  console.log(listOfUsers); // delete comment
   res.cookie('user_id', userID);
   res.redirect("/urls");
-})
+});
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
