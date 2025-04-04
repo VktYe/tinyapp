@@ -125,25 +125,19 @@ app.post("/login", (req, res) => {
       <h1>Email or password field cannot be empty</h1>
       <a href="/login"> Go back to login page</a>`)
   }
-  if (!user) {
-    return res.status(400).send(`
-      <h1> Email is not found</h1>
+  if (!user || user.password !== password) { //checks if email exists and compares passwords
+    return res.status(403).send(`
+      <h1>Incorrect email or password</h1>
       <a href="/login"> Go back to login page</a>`)
   }
-  if (user.password !== password) {
-    return res.status(400).send(`
-      <h1>Incorrect password</h1>
-      <a href="/login"> Go back to login page</a>`)
-  }
-
-  
+ 
   res.cookie("user_id", user.id, { maxAge: 900000, httpOnly: true }); //sets cookie
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 
