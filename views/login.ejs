@@ -21,27 +21,32 @@
    <header>
      <%- include('partials/_header') %>
    </header>
+   <div style="margin-top: 20px; margin-left: 10px;">
    <h1>Login</h1>
    <form method="POST" action="/login">
      <div>
-       <label for="email">Email:</label>
+       <label for="email">Email address:</label><br>
        <input 
          type="email" 
          id="email" 
          name="email"
+         placeholder="Enter email"
        >
      </div>
      <div>
-       <label for="password">Password:</label>
+       <label for="password">Password:</label><br>
        <input 
          type="password"
          id="password"
          name="password"
+         placeholder="Password"
+
        >
      </div>
-     <button>Log in</button>
-   </form>
-   <p> <a href="#"></a></p>
+     <button class="btn btn-primary", type="submit", style="margin-top: 15px;">Log in</button>
+    </div>
+    </form>
+   
     <!-- Bootstrap JS -->
     <script
     src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
