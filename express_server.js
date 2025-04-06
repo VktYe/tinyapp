@@ -71,7 +71,6 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-
   const templateVars = {
     urls: urlDatabase,
     user: listOfUsers[req.cookies["user_id"]] // passing user_id object to urls_index
@@ -80,9 +79,12 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => { // page where to create new tinyurl
-  const templateVars = {
-    user: listOfUsers[req.cookies["user_id"]]
-  };
+  const user = listOfUsers[req.cookies["user_id"]];
+  // if user is not logged in
+  if (!user) {
+    res.redirect("/login");
+  }
+  const templateVars = { user };
   res.render("urls_new", templateVars);
 });
 
@@ -108,6 +110,12 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
 });
 
 app.post("/urls", (req, res) => {
+  const user = listOfUsers[req.cookies["user_id"]];
+  if (!user) {
+    return res.status(403).send(`
+      <h1>You cannot shorten URLs if you are not logged in</h1>
+      <a href="/login"> Go back to login page</a>`);
+  }    
   const longURL = req.body.longURL;
   const id = generateRandomString();
   urlDatabase[id] = longURL;
@@ -139,7 +147,6 @@ app.post("/logout", (req, res) => {
   res.redirect("/login");
 });
 
-
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -163,10 +170,11 @@ app.post("/register", (req, res) => {
     password: req.body.password
   };
   
-  console.log(listOfUsers); // delete comment
+ 
   res.cookie('user_id', userID);
   res.redirect("/urls");
 });
+
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
@@ -175,8 +183,17 @@ app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   res.redirect('/urls');
 });
 
-app.get(`/u/:id`, (req, res) => { //redirects to the longURL after using short
-  const longURL = urlDatabase[req.params.id];
+app.get(`/u/:id`, (req, res) => { //redirects to the longURL after using short URL
+  const id = req.params.id; // doesn't handle if id is ""
+  if (!(id in urlDatabase)) {
+    return res.status(404).send(`
+      <h1>404 - URL Not Found</h1>
+      <p>The short URL <strong>${id}</strong> does not exist.</p>
+      <a href="/urls">Go back to My URLs</a>
+    `);
+  }
+
+  const longURL = urlDatabase[id];
   res.redirect(longURL);
 });
 
