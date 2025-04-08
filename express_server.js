@@ -248,7 +248,7 @@ app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   }
   //
   if (urlDatabase[id].userID !== user.id) {
-    return res.status(403).send("You don't own this URL");
+    return res.status(403).send("You don't own this URL"); // checks ownership
   }
   urlDatabase[id].longURL = req.body.longURL;
   res.redirect('/urls');
