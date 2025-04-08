@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -19,13 +20,13 @@ const listOfUsers = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "password123",
+    password: bcrypt.hashSync("password123", 10),
   },
 
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "password456"
+    password: bcrypt.hashSync("password345", 10)
   }
 
 };
@@ -176,13 +177,15 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email);
+  console.log(user.password); // check for hashed password
+  console.log(password)
 
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
       <h1>Email or password field cannot be empty</h1>
       <a href="/login"> Go back to login page</a>`);
   }
-  if (!user || user.password !== password) { //checks if email exists and compares passwords
+  if (!user || !bcrypt.compareSync(password, user.password)) { //checks if email exists and use bcryptcompares passwords
     return res.status(403).send(`
       <h1>Incorrect email or password</h1>
       <a href="/login"> Go back to login page</a>`);
@@ -214,11 +217,13 @@ app.post("/register", (req, res) => {
   }
 
   const userID = generateRandomString();
+  const hashPassword = bcrypt.hashSync(password, 10); // hash the password
   listOfUsers[userID] = {
     id: userID,
     email: req.body.email,
-    password: req.body.password
+    password: hashPassword 
   };
+  console.log("New user:", listOfUsers[userID]); // checks if password no longer stored in plain-text
   
  
   res.cookie('user_id', userID);
