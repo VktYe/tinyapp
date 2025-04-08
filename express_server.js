@@ -5,8 +5,14 @@ const PORT = 8080; // default port 8080
 
 // database
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca", 
+    userID: "aJ48lW",
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com", 
+    userID: "aJ48W"
+  },
 };
 
 const listOfUsers = {
@@ -47,6 +53,16 @@ const getUserByEmail = function(email) {
   return null;
 };
 
+const urlsForUser = function(id) { // create a new obj with matching userID
+  const userURLs = {};
+  for (const urlID in urlDatabase) {
+    if (urlDatabase[urlID].userID === id) {
+      userURLs[urlID] = urlDatabase[urlID];
+    }
+  }
+  return userURLs;
+}
+
 
 // Setting view engine
 app.set("view engine", "ejs");
@@ -56,24 +72,25 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
 // Endpoints:
+app.get("/", (req, res) => res.send("Hello!"));
+app.get("/hello", (req, res) => res.send("<html><body>Hello <b>World</b></body></html>\n")); // curl - will return etire HTML response string
+app.get("/urls.json", (req, res) => res.json(urlDatabase)) // returns as json string
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-}); // curl - will return etire HTML response string
-
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase); // returns as json string
-});
 
 app.get("/urls", (req, res) => {
+  const user = listOfUsers[req.cookies["user_id"]];
+  if(!user) {
+    res.status(403).send(`
+      <h1>You cannot see URLs if you are not logged in or registered</h1>
+      <a href="/login"> Go back to login page</a><br>
+      <a href="/register"> Go  to registration page</a>`
+    );
+  };
   const templateVars = {
-    urls: urlDatabase,
-    user: listOfUsers[req.cookies["user_id"]] // passing user_id object to urls_index
+    urls: urlsForUser(user.id),
+    user: user // passing user_id object to urls_index
   };
   res.render("urls_index", templateVars);
 });
@@ -101,10 +118,39 @@ app.get("/login", (req, res) => {
 
 
 app.get("/urls/:id", (req, res) => { // renders page with urls_show
+  const id = req.params.id;
+  const user = listOfUsers[req.cookies["user_id"]];
+
+  // checks if user exists
+  if (!user) {
+    return res.status(403).send(`
+      <h1>403 - Access Denied</h1>
+      <p>You must be logged in to view this URL.</p>
+      <a href="/login">Go to Login</a>
+      `)
+  }
+
+  // checks if URL exists
+  if(!urlDatabase[id]) { 
+    return res.status(404).send(`
+      <h1>404 - URL Not Found</h1>
+      <p>The short URL <strong>${id}</strong> does not exist.</p>
+      <a href="/urls">Go back to My URLs</a>
+      `)
+  }
+  // checks if user have the URL
+  if (urlDatabase[id].userID !== user.id) {
+
+    return res.status(403).send(`
+      <h1>403 - Access Denied</h1>
+      <p>You do not have permission to view this URL.</p>
+      <a href="/urls">Go back to My URLs</a>`)
+  }
+
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
-    user: listOfUsers[req.cookies["user_id"]]
+    id: id,
+    longURL: urlDatabase[id].longURL,
+    user: user
   };
   res.render("urls_show", templateVars);
 });
@@ -114,11 +160,15 @@ app.post("/urls", (req, res) => {
   if (!user) {
     return res.status(403).send(`
       <h1>You cannot shorten URLs if you are not logged in</h1>
-      <a href="/login"> Go back to login page</a>`);
+      <a href="/login"> Go back to login page</a>`
+    );
   }    
   const longURL = req.body.longURL;
   const id = generateRandomString();
-  urlDatabase[id] = longURL;
+  urlDatabase[id] = {
+    longURL: longURL,
+    userID: user.id
+  };
   res.redirect(`/urls/${id}`);
 });
 
@@ -178,8 +228,11 @@ app.post("/register", (req, res) => {
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
-  const newLongURL = req.body.longURL;
-  urlDatabase[id] = newLongURL;
+  if (!urlDatabase[id]) {
+    return res.status(400).send("URL not found");
+  }
+  //
+  urlDatabase[id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
@@ -192,13 +245,15 @@ app.get(`/u/:id`, (req, res) => { //redirects to the longURL after using short U
       <a href="/urls">Go back to My URLs</a>
     `);
   }
-
-  const longURL = urlDatabase[id];
-  res.redirect(longURL);
+  res.redirect(urlDatabase[id].longURL);
 });
 
 app.post("/urls/:id/delete", (req, res) => { //after deleting url redirects to /urls
-  delete urlDatabase[req.params.id];
+  const user = listOfUsers[req.cookies["user_id"]];
+
+  if (user) {
+    delete urlDatabase[req.params.id]; 
+  }
   res.redirect("/urls");
 });
 
