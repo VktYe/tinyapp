@@ -51,13 +51,13 @@ const getUserByEmail = function(email) {
       return user;
     }
   }
-  return null;
+  return false;
 };
 
-const urlsForUser = function(id) { // create a new obj with matching userID
+const urlsForUser = function(userId) { // create a new obj with matching userID
   const userURLs = {};
   for (const urlID in urlDatabase) {
-    if (urlDatabase[urlID].userID === id) {
+    if (urlDatabase[urlID].userID === userId) {
       userURLs[urlID] = urlDatabase[urlID];
     }
   }
@@ -237,11 +237,19 @@ app.post("/register", (req, res) => {
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
+  const user = listOfUsers[req.session.user_id];
+  if(!user) { 
+    return res.status(403).send("You must be logged in to edit URLs");
+  }
   
+  // add msg in res in user not logged in
   if (!urlDatabase[id]) {
-    return res.status(400).send("URL not found");
+    return res.status(404).send("URL not found");
   }
   //
+  if (urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You don't own this URL");
+  }
   urlDatabase[id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
