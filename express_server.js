@@ -1,5 +1,5 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -69,9 +69,12 @@ const urlsForUser = function(id) { // create a new obj with matching userID
 app.set("view engine", "ejs");
 
 // Midlleware
-// app.use(express.json());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'] 
+}));
 
 
 // Endpoints:
@@ -81,7 +84,7 @@ app.get("/urls.json", (req, res) => res.json(urlDatabase)) // returns as json st
 
 
 app.get("/urls", (req, res) => {
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
   if(!user) {
     res.status(403).send(`
       <h1>You cannot see URLs if you are not logged in or registered</h1>
@@ -97,7 +100,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => { // page where to create new tinyurl
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
   // if user is not logged in
   if (!user) {
     res.redirect("/login");
@@ -108,19 +111,19 @@ app.get("/urls/new", (req, res) => { // page where to create new tinyurl
 
 // Endpoint for GET /register returns register template
 app.get("/register", (req, res) => {
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
   res.render("register", {user});
 });
 
 app.get("/login", (req, res) => {
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
   res.render("login", {user});
 });
 
 
 app.get("/urls/:id", (req, res) => { // renders page with urls_show
   const id = req.params.id;
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
 
   // checks if user exists
   if (!user) {
@@ -157,7 +160,7 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
 });
 
 app.post("/urls", (req, res) => {
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
   if (!user) {
     return res.status(403).send(`
       <h1>You cannot shorten URLs if you are not logged in</h1>
@@ -178,7 +181,7 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const user = getUserByEmail(email);
   console.log(user.password); // check for hashed password
-  console.log(password)
+  console.log(password);
 
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
@@ -191,18 +194,19 @@ app.post("/login", (req, res) => {
       <a href="/login"> Go back to login page</a>`);
   }
  
-  res.cookie("user_id", user.id, { maxAge: 900000, httpOnly: true }); //sets cookie
+  req.session.user_id = user.id; //sets cookie
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null; // clear the entire session by seting to null
   res.redirect("/login");
 });
 
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  console.log("req.session before set:", req.session); // Debug
 
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
@@ -226,13 +230,14 @@ app.post("/register", (req, res) => {
   console.log("New user:", listOfUsers[userID]); // checks if password no longer stored in plain-text
   
  
-  res.cookie('user_id', userID);
+  req.session.user_id = userID;
   res.redirect("/urls");
 });
 
 
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
+  
   if (!urlDatabase[id]) {
     return res.status(400).send("URL not found");
   }
@@ -254,7 +259,7 @@ app.get(`/u/:id`, (req, res) => { //redirects to the longURL after using short U
 });
 
 app.post("/urls/:id/delete", (req, res) => { //after deleting url redirects to /urls
-  const user = listOfUsers[req.cookies["user_id"]];
+  const user = listOfUsers[req.session.user_id];
 
   if (user) {
     delete urlDatabase[req.params.id]; 
