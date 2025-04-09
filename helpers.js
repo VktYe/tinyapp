@@ -9,6 +9,17 @@ const getUserByEmail = function(email, database) {
 };
 
 
+const urlsForUser = function(userId, database) { // create a new obj with matching userID
+  const userURLs = {};
+  for (const urlID in database) {
+    if (database[urlID].userID === userId) {
+      userURLs[urlID] = database[urlID];
+    }
+  }
+  return userURLs;
+};
+
 module.exports = {
   getUserByEmail,
+  urlsForUser
 };
