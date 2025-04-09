@@ -1,17 +1,17 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
-const {getUserByEmail} = require("./helpers");
+const {getUserByEmail, urlsForUser} = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 // database
 const urlDatabase = {
   b2xVn2: {
-    longURL: "http://www.lighthouselabs.ca", 
+    longURL: "http://www.lighthouselabs.ca",
     userID: "aJ48lW",
   },
   "9sm5xK": {
-    longURL: "http://www.google.com", 
+    longURL: "http://www.google.com",
     userID: "aJ48W"
   },
 };
@@ -46,15 +46,7 @@ const generateRandomString = function() {
 
 
 
-const urlsForUser = function(userId) { // create a new obj with matching userID
-  const userURLs = {};
-  for (const urlID in urlDatabase) {
-    if (urlDatabase[urlID].userID === userId) {
-      userURLs[urlID] = urlDatabase[urlID];
-    }
-  }
-  return userURLs;
-}
+
 
 
 // Setting view engine
@@ -65,27 +57,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
-  keys: ['key1', 'key2'] 
+  keys: ['key1', 'key2']
 }));
 
 
 // Endpoints:
 app.get("/", (req, res) => res.send("Hello!"));
 app.get("/hello", (req, res) => res.send("<html><body>Hello <b>World</b></body></html>\n")); // curl - will return etire HTML response string
-app.get("/urls.json", (req, res) => res.json(urlDatabase)) // returns as json string
+app.get("/urls.json", (req, res) => res.json(urlDatabase)); // returns as json string
 
 
 app.get("/urls", (req, res) => {
   const user = listOfUsers[req.session.user_id];
-  if(!user) {
+  if (!user) {
     res.status(403).send(`
       <h1>You cannot see URLs if you are not logged in or registered</h1>
       <a href="/login"> Go back to login page</a><br>
       <a href="/register"> Go  to registration page</a>`
     );
-  };
+  }
   const templateVars = {
-    urls: urlsForUser(user.id),
+    urls: urlsForUser(user.id, urlDatabase),
     user: user // passing user_id object to urls_index
   };
   res.render("urls_index", templateVars);
@@ -123,16 +115,16 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
       <h1>403 - Access Denied</h1>
       <p>You must be logged in to view this URL.</p>
       <a href="/login">Go to Login</a>
-      `)
+      `);
   }
 
   // checks if URL exists
-  if(!urlDatabase[id]) { 
+  if (!urlDatabase[id]) {
     return res.status(404).send(`
       <h1>404 - URL Not Found</h1>
       <p>The short URL <strong>${id}</strong> does not exist.</p>
       <a href="/urls">Go back to My URLs</a>
-      `)
+      `);
   }
   // checks if user have the URL
   if (urlDatabase[id].userID !== user.id) {
@@ -140,7 +132,7 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
     return res.status(403).send(`
       <h1>403 - Access Denied</h1>
       <p>You do not have permission to view this URL.</p>
-      <a href="/urls">Go back to My URLs</a>`)
+      <a href="/urls">Go back to My URLs</a>`);
   }
 
   const templateVars = {
@@ -158,7 +150,7 @@ app.post("/urls", (req, res) => {
       <h1>You cannot shorten URLs if you are not logged in</h1>
       <a href="/login"> Go back to login page</a>`
     );
-  }    
+  }
   const longURL = req.body.longURL;
   const id = generateRandomString();
   urlDatabase[id] = {
@@ -217,7 +209,7 @@ app.post("/register", (req, res) => {
   listOfUsers[userID] = {
     id: userID,
     email: req.body.email,
-    password: hashPassword 
+    password: hashPassword
   };
   console.log("New user:", listOfUsers[userID]); // checks if password no longer stored in plain-text
   
@@ -230,7 +222,7 @@ app.post("/register", (req, res) => {
 app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   const id = req.params.id;
   const user = listOfUsers[req.session.user_id];
-  if(!user) { 
+  if (!user) {
     return res.status(403).send("You must be logged in to edit URLs");
   }
   
@@ -262,7 +254,7 @@ app.post("/urls/:id/delete", (req, res) => { //after deleting url redirects to /
   const user = listOfUsers[req.session.user_id];
 
   if (user) {
-    delete urlDatabase[req.params.id]; 
+    delete urlDatabase[req.params.id];
   }
   res.redirect("/urls");
 });
