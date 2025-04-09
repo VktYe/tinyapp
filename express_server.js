@@ -44,11 +44,6 @@ const generateRandomString = function() {
   return randomString;
 };
 
-
-
-
-
-
 // Setting view engine
 app.set("view engine", "ejs");
 
@@ -62,7 +57,13 @@ app.use(cookieSession({
 
 
 // Endpoints:
-app.get("/", (req, res) => res.send("Hello!"));
+app.get("/", (req, res) => {
+  const user = listOfUsers[req.session.user_id];
+  if (user) {
+    return res.redirect("/urls");
+  }
+  res.redirect("/login");
+});
 app.get("/hello", (req, res) => res.send("<html><body>Hello <b>World</b></body></html>\n")); // curl - will return etire HTML response string
 app.get("/urls.json", (req, res) => res.json(urlDatabase)); // returns as json string
 
@@ -78,8 +79,8 @@ app.get("/urls", (req, res) => {
   }
   const templateVars = {
     urls: urlsForUser(user.id, urlDatabase),
-    user: user // passing user_id object to urls_index
-  };
+    user: user 
+  }
   res.render("urls_index", templateVars);
 });
 
@@ -96,11 +97,17 @@ app.get("/urls/new", (req, res) => { // page where to create new tinyurl
 // Endpoint for GET /register returns register template
 app.get("/register", (req, res) => {
   const user = listOfUsers[req.session.user_id];
+  if(user) {
+    return res.redirect("/urls");
+  }
   res.render("register", {user});
 });
 
 app.get("/login", (req, res) => {
   const user = listOfUsers[req.session.user_id];
+  if(user) {
+    return res.redirect("/urls");
+  }
   res.render("login", {user});
 });
 
@@ -109,7 +116,6 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
   const id = req.params.id;
   const user = listOfUsers[req.session.user_id];
 
-  // checks if user exists
   if (!user) {
     return res.status(403).send(`
       <h1>403 - Access Denied</h1>
@@ -126,7 +132,7 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
       <a href="/urls">Go back to My URLs</a>
       `);
   }
-  // checks if user have the URL
+  // checks if user has the URL
   if (urlDatabase[id].userID !== user.id) {
 
     return res.status(403).send(`
@@ -139,7 +145,7 @@ app.get("/urls/:id", (req, res) => { // renders page with urls_show
     id: id,
     longURL: urlDatabase[id].longURL,
     user: user
-  };
+  }
   res.render("urls_show", templateVars);
 });
 
@@ -156,7 +162,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[id] = {
     longURL: longURL,
     userID: user.id
-  };
+  }
   res.redirect(`/urls/${id}`);
 });
 
@@ -190,7 +196,6 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  console.log("req.session before set:", req.session); // Debug
 
   if (email.trim() === "" || password.trim() === "") {
     return res.status(400).send(`
@@ -210,9 +215,7 @@ app.post("/register", (req, res) => {
     id: userID,
     email: req.body.email,
     password: hashPassword
-  };
-  console.log("New user:", listOfUsers[userID]); // checks if password no longer stored in plain-text
-  
+  }
  
   req.session.user_id = userID;
   res.redirect("/urls");
@@ -229,33 +232,41 @@ app.post("/urls/:id", (req, res) => { //after updating URL redirect to /urls
   // add msg in res in user not logged in
   if (!urlDatabase[id]) {
     return res.status(404).send("URL not found");
-  }
-  //
-  if (urlDatabase[id].userID !== user.id) {
-    return res.status(403).send("You don't own this URL"); // checks ownership
+  };
+  
+  if (urlDatabase[id].userID !== user.id) { // checks ownership
+    return res.status(403).send("You do not own this URL"); 
   }
   urlDatabase[id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
 app.get(`/u/:id`, (req, res) => { //redirects to the longURL after using short URL
-  const id = req.params.id; // doesn't handle if id is ""
+  const id = req.params.id;
   if (!(id in urlDatabase)) {
     return res.status(404).send(`
       <h1>404 - URL Not Found</h1>
       <p>The short URL <strong>${id}</strong> does not exist.</p>
       <a href="/urls">Go back to My URLs</a>
     `);
-  }
+  };
   res.redirect(urlDatabase[id].longURL);
 });
 
 app.post("/urls/:id/delete", (req, res) => { //after deleting url redirects to /urls
+  id = req.params.id;
   const user = listOfUsers[req.session.user_id];
 
-  if (user) {
-    delete urlDatabase[req.params.id];
+  if (!user) {
+    return res.status(403).send("You must be logged in to delete URLs");
   }
+  if (!urlDatabase[id]) {
+    return res.status(404).send("URL not found");
+  }
+  if (urlDatabase[id].userID !== user.id) {
+    return res.status(403).send("You do not own this URL");
+  }  
+  delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
