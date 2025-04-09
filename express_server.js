@@ -1,9 +1,9 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const {getUserByEmail} = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
-
 // database
 const urlDatabase = {
   b2xVn2: {
@@ -44,15 +44,7 @@ const generateRandomString = function() {
   return randomString;
 };
 
-const getUserByEmail = function(email) {
-  for (const userId in listOfUsers) {
-    const user = listOfUsers[userId];
-    if (email === user.email) { // if user.email exists return user
-      return user;
-    }
-  }
-  return false;
-};
+
 
 const urlsForUser = function(userId) { // create a new obj with matching userID
   const userURLs = {};
@@ -179,7 +171,7 @@ app.post("/urls", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, listOfUsers);
   console.log(user.password); // check for hashed password
   console.log(password);
 
@@ -214,7 +206,7 @@ app.post("/register", (req, res) => {
       <a href="/register"> Go back to registration form </a>`);
   }
 
-  if (getUserByEmail(email)) {
+  if (getUserByEmail(email, listOfUsers)) {
     return res.status(400).send(`
       <h1>This email already exists, try a different one </h1>
       <a href="/register"> Go back to registration form </a>`);
